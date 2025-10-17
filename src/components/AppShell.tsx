@@ -3,13 +3,15 @@ import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { User, Session } from "@supabase/supabase-js";
-import { Brain, Map, Bell, Home, LogOut, Menu, X } from "lucide-react";
+import { Brain, Map, Bell, Home, LogOut, Menu, X, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QuickCaptureModal } from "@/components/QuickCaptureModal";
 
 export default function AppShell() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -46,10 +48,10 @@ export default function AppShell() {
   }
 
   const navLinks = [
-    { to: "/", label: "Dashboard", icon: Home },
+    { to: "/momentum-maps", label: "Maps", icon: Map },
+    { to: "/", label: "Progress", icon: Home },
     { to: "/brain-dump", label: "Brain Dump", icon: Brain },
-    { to: "/momentum-maps", label: "Momentum Maps", icon: Map },
-    { to: "/smart-reminders", label: "Smart Reminders", icon: Bell },
+    { to: "/smart-reminders", label: "Scheduler", icon: Bell },
   ];
 
   return (
@@ -83,10 +85,25 @@ export default function AppShell() {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user.email}
-            </span>
+          <div className="hidden md:flex items-center gap-3">
+            <Button 
+              onClick={() => navigate("/momentum-maps")} 
+              variant="default"
+              size="sm"
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              New Task
+            </Button>
+            <Button 
+              onClick={() => setQuickCaptureOpen(true)}
+              variant="default"
+              size="sm"
+              className="gap-1 bg-dashboard-brainDump hover:bg-dashboard-brainDump/90"
+            >
+              <Plus className="h-4 w-4" />
+              Brain Dump
+            </Button>
             <Button onClick={handleSignOut} variant="ghost" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
@@ -108,6 +125,31 @@ export default function AppShell() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t">
             <nav className="container py-4 flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 pb-2 mb-2 border-b">
+                <Button 
+                  onClick={() => {
+                    navigate("/momentum-maps");
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Task
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setQuickCaptureOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  size="sm"
+                  className="w-full bg-dashboard-brainDump hover:bg-dashboard-brainDump/90"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Brain Dump
+                </Button>
+              </div>
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
@@ -148,6 +190,12 @@ export default function AppShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {/* Quick Capture Modal */}
+      <QuickCaptureModal 
+        open={quickCaptureOpen} 
+        onOpenChange={setQuickCaptureOpen} 
+      />
     </div>
   );
 }

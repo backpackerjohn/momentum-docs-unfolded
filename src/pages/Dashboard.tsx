@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Map, Bell, PlusCircle } from "lucide-react";
+import { DashboardCard } from "@/components/DashboardCard";
+import { Brain, Map, Bell, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -32,75 +31,88 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const modules = [
-    {
-      title: "Brain Dump",
-      description: "Capture thoughts instantly without friction",
-      icon: Brain,
-      route: "/brain-dump",
-      color: "from-primary/20 to-primary/5",
-    },
-    {
-      title: "Momentum Maps",
-      description: "AI-powered goal breakdown into achievable steps",
-      icon: Map,
-      route: "/momentum-maps",
-      color: "from-accent/20 to-accent/5",
-    },
-    {
-      title: "Smart Reminders",
-      description: "Contextual reminders that adapt to your flow",
-      icon: Bell,
-      route: "/smart-reminders",
-      color: "from-success/20 to-success/5",
-    },
-  ];
-
   return (
-    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Welcome back!</h1>
-          <p className="text-muted-foreground mt-2">Your ADHD-friendly productivity hub</p>
-        </div>
-        <Button size="lg" className="w-full md:w-auto">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Quick Capture
-        </Button>
-      </div>
+    <main 
+      id="main-content" 
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 lg:space-y-8"
+    >
+      {/* Top Row */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <DashboardCard
+          variant="momentum"
+          title="MOMENTUM"
+          subtitle={
+            <>
+              transform <span className="text-primary font-semibold">big task</span> into{" "}
+              <span className="text-accent font-semibold">small steps</span>
+            </>
+          }
+          links={[
+            { text: "Create a Momentum Map", onClick: () => navigate("/momentum-maps") },
+            { text: "My Maps", onClick: () => navigate("/momentum-maps") },
+          ]}
+          className="lg:col-span-2"
+        />
+        <DashboardCard
+          variant="progress"
+          title="PROGRESS"
+          subtitle={
+            <>
+              Track the Momentum<br />
+              You've <span className="text-primary font-semibold">gained</span>
+            </>
+          }
+          links={[
+            { text: "See What You've Achieved", onClick: () => navigate("/momentum-maps") },
+          ]}
+          icon={TrendingUp}
+        />
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {modules.map((module) => (
-          <Card
-            key={module.route}
-            className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
-            onClick={() => navigate(module.route)}
-          >
-            <CardHeader>
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${module.color} flex items-center justify-center mb-4`}>
-                <module.icon className="h-6 w-6 text-foreground" />
-              </div>
-              <CardTitle>{module.title}</CardTitle>
-              <CardDescription>{module.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="ghost" className="w-full">
-                Open Module →
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Today's Focus</CardTitle>
-          <CardDescription>Your momentum for today</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center py-8 text-muted-foreground">
-          No active tasks yet. Start by capturing a thought or creating a momentum map!
-        </CardContent>
-      </Card>
-    </div>
+      {/* Bottom Row */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <DashboardCard
+          variant="brainDump"
+          title="BRAIN DUMP"
+          subtitle={
+            <>
+              A Place to Organize<br />
+              Your Random <span className="text-white font-semibold">Thoughts</span>
+            </>
+          }
+          links={[
+            { text: "Clean up my brain", onClick: () => navigate("/brain-dump") },
+          ]}
+          icon={Brain}
+        />
+        <DashboardCard
+          variant="today"
+          title="TODAY"
+          subtitle={
+            <>
+              Easy Things to<br />
+              Knock Out <span className="text-primary font-semibold">Today</span>
+            </>
+          }
+          links={[
+            { text: "Get Things Done Today", onClick: () => navigate("/momentum-maps") },
+          ]}
+        />
+        <DashboardCard
+          variant="scheduler"
+          title="SCHEDULER"
+          subtitle={
+            <>
+              Smart Reminders for<br />
+              Building Healthy <span className="text-accent font-semibold">Habits</span>
+            </>
+          }
+          links={[
+            { text: "Let's Build Healthy Habits", onClick: () => navigate("/smart-reminders") },
+          ]}
+          icon={Bell}
+        />
+      </section>
+    </main>
   );
 }
