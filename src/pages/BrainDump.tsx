@@ -15,8 +15,8 @@ export default function BrainDump() {
   const [categorizingThoughts, setCategorizingThoughts] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   
-  const { thoughts: activeThoughts, isLoading: activeLoading } = useBrainDumpData('active');
-  const { thoughts: archivedThoughts, isLoading: archivedLoading } = useBrainDumpData('archived');
+  const { thoughts: activeThoughts, isLoading: activeLoading, refetch: refetchActive } = useBrainDumpData('active');
+  const { thoughts: archivedThoughts, isLoading: archivedLoading, refetch: refetchArchived } = useBrainDumpData('archived');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,6 +41,7 @@ export default function BrainDump() {
         </div>
 
         <CapturePanel 
+          onRefetch={refetchActive}
           onCategorizingUpdate={(thoughtIds, isCategorizing) => {
             setCategorizingThoughts(prev => {
               const next = new Set(prev);

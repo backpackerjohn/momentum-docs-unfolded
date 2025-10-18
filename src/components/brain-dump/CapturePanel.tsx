@@ -7,10 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface CapturePanelProps {
+  onRefetch?: () => void;
   onCategorizingUpdate?: (thoughtIds: string[], isCategorizing: boolean) => void;
 }
 
-export function CapturePanel({ onCategorizingUpdate }: CapturePanelProps) {
+export function CapturePanel({ onRefetch, onCategorizingUpdate }: CapturePanelProps) {
   const [content, setContent] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -65,6 +66,9 @@ export function CapturePanel({ onCategorizingUpdate }: CapturePanelProps) {
         .select();
 
       if (insertError) throw insertError;
+
+      // Immediately refetch to show thoughts
+      onRefetch?.();
 
       // Track categorizing thoughts
       const thoughtIds = insertedThoughts?.map(t => t.id) || [];
