@@ -48,20 +48,53 @@ export function CapturePanel() {
         return;
       }
 
+      // Insert thoughts first
       const thoughtRecords = thoughts.map(thought => ({
         user_id: user.id,
         content: thought,
         status: 'active' as const,
       }));
 
-      const { error } = await supabase
+      const { data: insertedThoughts, error: insertError } = await supabase
         .from('thoughts')
-        .insert(thoughtRecords);
+        .insert(thoughtRecords)
+        .select();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // Categorize each thought with AI (non-blocking)
+      if (insertedThoughts) {
+        insertedThoughts.forEach(async (thought) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('categorize-thought', {
+              body: { 
+                thoughtContent: thought.content,
+                userId: user.id 
+              }
+            });
+
+            if (error) {
+              console.error('Categorization error for thought:', thought.id, error);
+              return;
+            }
+
+            if (data?.categoryIds && data.categoryIds.length > 0) {
+              // Update thought with first category
+              await supabase
+                .from('thoughts')
+                .update({ category_id: data.categoryIds[0] })
+                .eq('id', thought.id);
+            }
+          } catch (err) {
+            console.error('Failed to categorize thought:', err);
+            // Silently fail - thought is already saved
+          }
+        });
+      }
 
       toast({ 
         title: `${thoughts.length} thought${thoughts.length > 1 ? 's' : ''} captured!`,
+        description: "AI is categorizing your thoughts..."
       });
       
       setContent("");

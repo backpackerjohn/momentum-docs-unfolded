@@ -126,6 +126,14 @@ export function ThoughtCard({ thought, onArchive, onDelete }: ThoughtCardProps) 
             <Button
               variant="ghost"
               size="sm"
+              disabled={true}
+              className="text-xs opacity-50 cursor-not-allowed"
+            >
+              AI Suggest
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsEditing(true)}
               disabled={isLoading}
               className="flex-1 sm:flex-none"

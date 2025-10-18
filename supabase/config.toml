@@ -1,1 +1,4 @@
 project_id = "powoetrkjtwzmylymcdi"
+
+[functions.categorize-thought]
+verify_jwt = false
