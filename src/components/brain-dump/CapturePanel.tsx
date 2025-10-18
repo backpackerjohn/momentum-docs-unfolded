@@ -6,7 +6,11 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export function CapturePanel() {
+interface CapturePanelProps {
+  onCategorizingUpdate?: (thoughtIds: string[], isCategorizing: boolean) => void;
+}
+
+export function CapturePanel({ onCategorizingUpdate }: CapturePanelProps) {
   const [content, setContent] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -62,9 +66,13 @@ export function CapturePanel() {
 
       if (insertError) throw insertError;
 
+      // Track categorizing thoughts
+      const thoughtIds = insertedThoughts?.map(t => t.id) || [];
+      onCategorizingUpdate?.(thoughtIds, true);
+
       // Categorize each thought with AI (non-blocking)
       if (insertedThoughts) {
-        insertedThoughts.forEach(async (thought) => {
+        const categorizationPromises = insertedThoughts.map(async (thought) => {
           try {
             const { data, error } = await supabase.functions.invoke('categorize-thought', {
               body: { 
@@ -78,18 +86,23 @@ export function CapturePanel() {
               return;
             }
 
-            if (data?.categoryIds && data.categoryIds.length > 0) {
-              // Update thought with first category
+            if (data?.primaryCategoryId) {
+              // Update thought with primary category
               await supabase
                 .from('thoughts')
-                .update({ category_id: data.categoryIds[0] })
+                .update({ category_id: data.primaryCategoryId })
                 .eq('id', thought.id);
             }
           } catch (err) {
             console.error('Failed to categorize thought:', err);
-            // Silently fail - thought is already saved
+          } finally {
+            // Remove from categorizing set
+            onCategorizingUpdate?.([thought.id], false);
           }
         });
+
+        // Wait for all categorizations to complete
+        await Promise.allSettled(categorizationPromises);
       }
 
       toast({ 

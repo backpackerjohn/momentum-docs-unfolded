@@ -134,7 +134,8 @@ Example: ["Work", "Tasks"]`
       JSON.stringify({ 
         success: true, 
         categories,
-        categoryIds 
+        categoryIds,
+        primaryCategoryId: categoryIds[0] || null
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

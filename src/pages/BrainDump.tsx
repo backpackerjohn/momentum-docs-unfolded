@@ -12,6 +12,7 @@ import { useBrainDumpData } from "@/hooks/useBrainDumpData";
 export default function BrainDump() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+  const [categorizingThoughts, setCategorizingThoughts] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   
   const { thoughts: activeThoughts, isLoading: activeLoading } = useBrainDumpData('active');
@@ -39,7 +40,21 @@ export default function BrainDump() {
           </p>
         </div>
 
-        <CapturePanel />
+        <CapturePanel 
+          onCategorizingUpdate={(thoughtIds, isCategorizing) => {
+            setCategorizingThoughts(prev => {
+              const next = new Set(prev);
+              thoughtIds.forEach(id => {
+                if (isCategorizing) {
+                  next.add(id);
+                } else {
+                  next.delete(id);
+                }
+              });
+              return next;
+            });
+          }}
+        />
 
         <Tabs defaultValue="thoughts" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -64,6 +79,7 @@ export default function BrainDump() {
                   <ThoughtCard 
                     key={thought.id} 
                     thought={thought}
+                    isCategorizing={categorizingThoughts.has(thought.id)}
                   />
                 ))}
               </div>
