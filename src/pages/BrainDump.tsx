@@ -13,9 +13,10 @@ import { FilterPanel } from "@/components/brain-dump/FilterPanel";
 import { ClusterCard } from "@/components/brain-dump/ClusterCard";
 import { ConnectionCard } from "@/components/brain-dump/ConnectionCard";
 import { useBrainDumpData } from "@/hooks/useBrainDumpData";
+import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { useThoughtFilter } from "@/hooks/useThoughtFilter";
 import { useClusterData } from "@/hooks/useClusterData";
-import { toast } from "@/hooks/use-toast";
 
 export default function BrainDump() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -167,17 +168,21 @@ export default function BrainDump() {
       toast({
         title: `${thoughtIds.length} thoughts moved to Archive`,
         description: "Undo?",
-        action: {
-          altText: "Undo",
-          onClick: async () => {
-            await supabase
-              .from('thoughts')
-              .update({ status: 'active', archived_at: null })
-              .in('id', thoughtIds);
-            
-            toast({ title: "Thoughts restored" });
-          }
-        },
+        action: (
+          <ToastAction 
+            altText="Undo" 
+            onClick={async () => {
+              await supabase
+                .from('thoughts')
+                .update({ status: 'active', archived_at: null })
+                .in('id', thoughtIds);
+              
+              toast({ title: "Thoughts restored" });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
         duration: 12000,
       });
       

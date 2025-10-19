@@ -6,6 +6,7 @@ import { Archive, Edit2, Trash2, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { getCategoryColor } from "@/lib/categoryColors";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -83,18 +84,22 @@ export function ThoughtCard({
       toast({
         title: "1 thought moved to Archive",
         description: "Undo?",
-        action: {
-          altText: "Undo",
-          onClick: async () => {
-            // Restore thought
-            await supabase
-              .from('thoughts')
-              .update({ status: 'active', archived_at: null })
-              .eq('id', thought.id);
-            
-            toast({ title: "Thought restored" });
-          }
-        },
+        action: (
+          <ToastAction 
+            altText="Undo" 
+            onClick={async () => {
+              // Restore thought
+              await supabase
+                .from('thoughts')
+                .update({ status: 'active', archived_at: null })
+                .eq('id', thought.id);
+              
+              toast({ title: "Thought restored" });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
         duration: 12000, // 12 seconds as per spec
       });
       onArchive?.(thought.id);

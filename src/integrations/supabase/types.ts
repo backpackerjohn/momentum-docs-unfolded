@@ -133,6 +133,117 @@ export type Database = {
           },
         ]
       }
+      cluster_thoughts: {
+        Row: {
+          added_at: string
+          cluster_id: string
+          is_completed: boolean
+          thought_id: string
+        }
+        Insert: {
+          added_at?: string
+          cluster_id: string
+          is_completed?: boolean
+          thought_id: string
+        }
+        Update: {
+          added_at?: string
+          cluster_id?: string
+          is_completed?: boolean
+          thought_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cluster_thoughts_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cluster_thoughts_thought_id_fkey"
+            columns: ["thought_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clusters: {
+        Row: {
+          created_at: string
+          id: string
+          is_collapsed: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_collapsed?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_collapsed?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      connections: {
+        Row: {
+          created_at: string
+          id: string
+          is_dismissed: boolean
+          reason: string
+          strength: string
+          thought1_id: string
+          thought2_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_dismissed?: boolean
+          reason: string
+          strength: string
+          thought1_id: string
+          thought2_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_dismissed?: boolean
+          reason?: string
+          strength?: string
+          thought1_id?: string
+          thought2_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_thought1_id_fkey"
+            columns: ["thought1_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_thought2_id_fkey"
+            columns: ["thought2_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dnd_windows: {
         Row: {
           created_at: string
@@ -326,6 +437,39 @@ export type Database = {
             columns: ["chunk_id"]
             isOneToOne: false
             referencedRelation: "chunks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thought_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          thought_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          thought_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          thought_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thought_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_categories_thought_id_fkey"
+            columns: ["thought_id"]
+            isOneToOne: false
+            referencedRelation: "thoughts"
             referencedColumns: ["id"]
           },
         ]

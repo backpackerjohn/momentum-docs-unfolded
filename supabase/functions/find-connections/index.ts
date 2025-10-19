@@ -151,11 +151,39 @@ Return ONLY a JSON array in this exact format:
 
     console.log(`Found ${validConnections.length} valid connections`);
 
+    // Save connections to database
+    const connectionsToInsert = validConnections
+      .filter((conn): conn is NonNullable<typeof conn> => conn !== null)
+      .map(conn => ({
+        user_id: userId,
+        thought1_id: conn.thought1_id,
+        thought2_id: conn.thought2_id,
+        strength: conn.strength,
+        reason: conn.reason
+      }));
+
+    if (connectionsToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('connections')
+        .upsert(connectionsToInsert, {
+          onConflict: 'user_id,thought1_id,thought2_id',
+          ignoreDuplicates: false
+        });
+
+      if (insertError) {
+        console.error('Error saving connections:', insertError);
+        // Don't fail the request, just log the error
+      } else {
+        console.log(`Saved ${connectionsToInsert.length} connections to database`);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         connections: validConnections,
-        total_thoughts_analyzed: thoughts.length
+        total_thoughts_analyzed: thoughts.length,
+        saved_to_database: connectionsToInsert.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
