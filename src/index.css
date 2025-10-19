@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Typography Standards from Spec */
+.text-h1 {
+  @apply text-[30px] font-bold;
+}
+
+.text-h2 {
+  @apply text-[20px] font-bold;
+}
+
+.text-h3 {
+  @apply text-[18px] font-bold;
+}
+
+.text-body {
+  @apply text-[14px] font-normal;
+}
+
+.text-ui-label {
+  @apply text-[12px] font-medium;
+}
+
+.text-caption {
+  @apply text-[12px] font-normal;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
