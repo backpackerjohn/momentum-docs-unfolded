@@ -477,7 +477,6 @@ export type Database = {
       thoughts: {
         Row: {
           archived_at: string | null
-          category_id: string | null
           content: string
           created_at: string
           id: string
@@ -489,7 +488,6 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
-          category_id?: string | null
           content: string
           created_at?: string
           id?: string
@@ -501,7 +499,6 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
-          category_id?: string | null
           content?: string
           created_at?: string
           id?: string
@@ -511,15 +508,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "thoughts_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {

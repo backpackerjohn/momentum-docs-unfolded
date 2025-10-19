@@ -13,12 +13,16 @@ import type { Database } from "@/integrations/supabase/types";
 type Thought = Database['public']['Tables']['thoughts']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
 
-interface ThoughtWithCategory extends Thought {
-  categories?: Pick<Category, 'id' | 'name' | 'color'> | null;
+interface ThoughtCategory {
+  categories: Pick<Category, 'id' | 'name' | 'color'> | null;
+}
+
+interface ThoughtWithCategories extends Thought {
+  thought_categories: ThoughtCategory[];
 }
 
 interface ThoughtCardProps {
-  thought: ThoughtWithCategory;
+  thought: ThoughtWithCategories;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
   isCategorizing?: boolean;
@@ -160,9 +164,11 @@ export function ThoughtCard({
   async function handleAddCategory(categoryId: string) {
     setIsLoading(true);
     const { error } = await supabase
-      .from('thoughts')
-      .update({ category_id: categoryId })
-      .eq('id', thought.id);
+      .from('thought_categories')
+      .insert({
+        thought_id: thought.id,
+        category_id: categoryId
+      });
 
     if (error) {
       toast({ title: "Failed to add category", variant: "destructive" });
@@ -234,19 +240,23 @@ export function ThoughtCard({
                 🤖 Categorizing...
               </span>
             )}
-            {!isCategorizing && thought.categories && (
-              <span
-                className="px-2 py-1 rounded-full text-ui-label text-white"
-                style={{ backgroundColor: thought.categories.color || getCategoryColor(thought.categories.name) }}
-              >
-                {thought.categories.name}
-              </span>
-            )}
-            {!isCategorizing && !thought.categories && !thought.category_id && (
+            {!isCategorizing && thought.thought_categories && thought.thought_categories.length > 0 ? (
+              thought.thought_categories.map((tc, idx) => 
+                tc.categories ? (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 rounded-full text-ui-label text-white"
+                    style={{ backgroundColor: tc.categories.color || getCategoryColor(tc.categories.name) }}
+                  >
+                    {tc.categories.name}
+                  </span>
+                ) : null
+              )
+            ) : !isCategorizing ? (
               <span className="px-2 py-1 rounded-full text-ui-label bg-muted text-muted-foreground">
                 Uncategorized
               </span>
-            )}
+            ) : null}
           </div>
 
           {suggestions.length > 0 && (

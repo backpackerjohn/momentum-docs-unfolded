@@ -4,11 +4,15 @@ import type { Database } from '@/integrations/supabase/types';
 type Thought = Database['public']['Tables']['thoughts']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
 
-interface ThoughtWithCategory extends Thought {
-  categories?: Pick<Category, 'id' | 'name' | 'color'> | null;
+interface ThoughtCategory {
+  categories: Pick<Category, 'id' | 'name' | 'color'> | null;
 }
 
-export function useThoughtFilter(thoughts: ThoughtWithCategory[]) {
+interface ThoughtWithCategories extends Thought {
+  thought_categories: ThoughtCategory[];
+}
+
+export function useThoughtFilter(thoughts: ThoughtWithCategories[]) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -36,8 +40,10 @@ export function useThoughtFilter(thoughts: ThoughtWithCategory[]) {
     // Filter by selected categories
     if (selectedCategories.length > 0) {
       filtered = filtered.filter(thought => {
-        if (!thought.category_id) return false;
-        return selectedCategories.includes(thought.category_id);
+        if (!thought.thought_categories || thought.thought_categories.length === 0) return false;
+        return thought.thought_categories.some(tc => 
+          tc.categories && selectedCategories.includes(tc.categories.id)
+        );
       });
     }
 

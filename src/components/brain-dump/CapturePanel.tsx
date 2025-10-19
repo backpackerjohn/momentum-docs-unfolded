@@ -90,12 +90,16 @@ export function CapturePanel({ onRefetch, onCategorizingUpdate }: CapturePanelPr
               return;
             }
 
-            if (data?.primaryCategoryId) {
-              // Update thought with primary category
+            if (data?.categoryIds && data.categoryIds.length > 0) {
+              // Insert into thought_categories join table (1-3 categories)
+              const categoryLinks = data.categoryIds.map((categoryId: string) => ({
+                thought_id: thought.id,
+                category_id: categoryId
+              }));
+
               await supabase
-                .from('thoughts')
-                .update({ category_id: data.primaryCategoryId })
-                .eq('id', thought.id);
+                .from('thought_categories')
+                .insert(categoryLinks);
             }
           } catch (err) {
             console.error('Failed to categorize thought:', err);

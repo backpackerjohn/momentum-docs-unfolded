@@ -6,12 +6,16 @@ type Thought = Database['public']['Tables']['thoughts']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
 type ThoughtStatus = Database['public']['Enums']['thought_status'];
 
-interface ThoughtWithCategory extends Thought {
-  categories?: Pick<Category, 'id' | 'name' | 'color'> | null;
+interface ThoughtCategory {
+  categories: Pick<Category, 'id' | 'name' | 'color'> | null;
+}
+
+interface ThoughtWithCategories extends Thought {
+  thought_categories: ThoughtCategory[];
 }
 
 export function useBrainDumpData(status: ThoughtStatus = 'active') {
-  const [thoughts, setThoughts] = useState<ThoughtWithCategory[]>([]);
+  const [thoughts, setThoughts] = useState<ThoughtWithCategories[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,14 +55,14 @@ export function useBrainDumpData(status: ThoughtStatus = 'active') {
 
       const { data, error: fetchError } = await supabase
         .from('thoughts')
-        .select('*, categories(id, name, color)')
+        .select('*, thought_categories(categories(id, name, color))')
         .eq('user_id', user.id)
         .eq('status', status)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
       
-      setThoughts((data as ThoughtWithCategory[]) || []);
+      setThoughts((data as ThoughtWithCategories[]) || []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch thoughts');
