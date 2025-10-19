@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Archive, Edit2, Trash2 } from "lucide-react";
+import { Archive, Edit2, Trash2, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { getCategoryColor } from "@/lib/categoryColors";
@@ -20,9 +21,20 @@ interface ThoughtCardProps {
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
   isCategorizing?: boolean;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
 }
 
-export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = false }: ThoughtCardProps) {
+export function ThoughtCard({ 
+  thought, 
+  onArchive, 
+  onDelete, 
+  isCategorizing = false,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelection
+}: ThoughtCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(thought.content);
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +76,27 @@ export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = fal
     if (error) {
       toast({ title: "Failed to archive thought", variant: "destructive" });
     } else {
-      toast({ title: "Thought archived" });
+      // Store original state for undo
+      const originalThought = { ...thought };
+      
+      // Show undo toast
+      toast({
+        title: "1 thought moved to Archive",
+        description: "Undo?",
+        action: {
+          altText: "Undo",
+          onClick: async () => {
+            // Restore thought
+            await supabase
+              .from('thoughts')
+              .update({ status: 'active', archived_at: null })
+              .eq('id', thought.id);
+            
+            toast({ title: "Thought restored" });
+          }
+        },
+        duration: 12000, // 12 seconds as per spec
+      });
       onArchive?.(thought.id);
     }
     setIsLoading(false);
@@ -137,7 +169,34 @@ export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = fal
   }
 
   return (
-    <Card className="p-4 hover:scale-[1.02] hover:shadow-xl transition-all duration-200">
+    <Card className={`group relative p-4 hover:scale-[1.02] hover:shadow-xl transition-all duration-200 ${
+      isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
+    }`}>
+      {/* Selection Checkbox */}
+      {isSelectionMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelection?.(thought.id)}
+            className="h-5 w-5"
+          />
+        </div>
+      )}
+      
+      {/* Hover Checkmark - only show when not in selection mode */}
+      {!isSelectionMode && (
+        <Button
+          onClick={handleArchive}
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 bg-green-500 hover:bg-green-600 text-white"
+          disabled={isLoading}
+          title="Mark as Done"
+        >
+          <Check className="h-4 w-4" />
+        </Button>
+      )}
+      
       {isEditing ? (
         <div className="space-y-3">
           <Textarea
@@ -158,28 +217,28 @@ export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = fal
       ) : (
         <>
           <div className="space-y-2 mb-4">
-            <h3 className="font-semibold text-foreground line-clamp-2">{title}</h3>
+            <h3 className="text-h3 text-foreground line-clamp-2">{title}</h3>
             {snippet && (
-              <p className="text-sm text-muted-foreground line-clamp-3">{snippet}</p>
+              <p className="text-body text-muted-foreground line-clamp-3">{snippet}</p>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
             {isCategorizing && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+              <span className="px-2 py-1 rounded-full text-ui-label bg-muted text-muted-foreground">
                 🤖 Categorizing...
               </span>
             )}
             {!isCategorizing && thought.categories && (
               <span
-                className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                className="px-2 py-1 rounded-full text-ui-label text-white"
                 style={{ backgroundColor: thought.categories.color || getCategoryColor(thought.categories.name) }}
               >
                 {thought.categories.name}
               </span>
             )}
             {!isCategorizing && !thought.categories && !thought.category_id && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+              <span className="px-2 py-1 rounded-full text-ui-label bg-muted text-muted-foreground">
                 Uncategorized
               </span>
             )}
@@ -187,14 +246,14 @@ export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = fal
 
           {suggestions.length > 0 && (
             <div className="mb-4 pt-3 border-t">
-              <p className="text-xs text-muted-foreground mb-2">AI Suggestions:</p>
+              <p className="text-caption text-muted-foreground mb-2">AI Suggestions:</p>
               <div className="flex flex-wrap gap-2">
                 {suggestions.map(sug => (
                   <button
                     key={sug.id}
                     onClick={() => handleAddCategory(sug.id)}
                     disabled={isLoading}
-                    className="px-2 py-1 rounded-full text-xs border-2 border-dashed border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    className="px-2 py-1 rounded-full text-ui-label border-2 border-dashed border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                   >
                     {sug.name}
                   </button>
@@ -222,16 +281,6 @@ export function ThoughtCard({ thought, onArchive, onDelete, isCategorizing = fal
             >
               <Edit2 className="h-4 w-4 mr-1" />
               Edit
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleArchive}
-              disabled={isLoading}
-              className="flex-1 sm:flex-none"
-            >
-              <Archive className="h-4 w-4 mr-1" />
-              Archive
             </Button>
             <Button
               variant="ghost"
