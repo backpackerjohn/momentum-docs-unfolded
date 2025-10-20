@@ -191,12 +191,13 @@ export default function MomentumMaps() {
     0
   );
   const overallProgress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+  const isMapComplete = overallProgress === 100;
 
   return (
     <>
       <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         {/* Header */}
-        <div>
+        <div className="relative">
           <Button
             variant="ghost"
             size="sm"
@@ -207,12 +208,29 @@ export default function MomentumMaps() {
             Back to input
           </Button>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{currentMap.goal}</h1>
-          <div className="flex items-center gap-4">
-            <Progress value={overallProgress} className="flex-1 max-w-md" />
-            <span className="text-sm text-muted-foreground">
-              {completedSteps} / {totalSteps} steps
-            </span>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Progress value={overallProgress} className="flex-1 max-w-md h-3" />
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">
+                {completedSteps} / {totalSteps} steps
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {Math.round(overallProgress)}%
+              </span>
+            </div>
           </div>
+          
+          {/* Celebration overlay when complete */}
+          {isMapComplete && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg animate-celebrate">
+              <p className="text-lg font-semibold text-green-700 dark:text-green-400">
+                🎉 Congratulations! You've completed this map!
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                All {totalSteps} steps are done. Great work!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Main content */}

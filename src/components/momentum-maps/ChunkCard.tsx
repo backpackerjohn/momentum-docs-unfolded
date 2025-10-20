@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Lock, Unlock, HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Lock, Unlock, HelpCircle, ChevronDown, ChevronRight, Zap, Flame, Battery } from "lucide-react";
 import { Chunk, SubStep } from "@/hooks/useMomentumMaps";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,12 @@ const ENERGY_COLORS = {
   high: 'bg-red-500/20 text-red-800 dark:text-red-300 border-red-500/30',
 };
 
+const ENERGY_ICONS = {
+  low: Battery,
+  medium: Zap,
+  high: Flame,
+};
+
 export function ChunkCard({
   chunk,
   chunkNumber,
@@ -31,13 +37,31 @@ export function ChunkCard({
   onGetHelp,
 }: ChunkCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   const completedSteps = chunk.sub_steps.filter(s => s.is_completed).length;
   const totalSteps = chunk.sub_steps.length;
   const progress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+  
+  const EnergyIcon = ENERGY_ICONS[chunk.energy_tag];
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-lg">
+    <Card 
+      className="overflow-hidden transition-all duration-200 hover:shadow-lg relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        transform: isHovered ? 'perspective(1000px) rotateX(2deg) rotateY(-2deg)' : 'none',
+        transition: 'transform 0.2s ease-out',
+      }}
+    >
+      {/* Shimmer effect on hover */}
+      {isHovered && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+        </div>
+      )}
+      
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <button
@@ -54,8 +78,9 @@ export function ChunkCard({
                 <span className="text-xs font-mono text-muted-foreground">
                   Phase {chunkNumber}
                 </span>
-                <Badge className={ENERGY_COLORS[chunk.energy_tag]}>
-                  {chunk.energy_tag} energy
+                <Badge className={cn(ENERGY_COLORS[chunk.energy_tag], "flex items-center gap-1")}>
+                  <EnergyIcon className="h-3 w-3" />
+                  {chunk.energy_tag}
                 </Badge>
               </div>
               <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
