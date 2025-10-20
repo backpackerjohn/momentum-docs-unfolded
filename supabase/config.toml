@@ -2,3 +2,12 @@ project_id = "powoetrkjtwzmylymcdi"
 
 [functions.categorize-thought]
 verify_jwt = false
+
+[functions.generate-map]
+verify_jwt = true
+
+[functions.replan-map]
+verify_jwt = true
+
+[functions.get-stuck-suggestions]
+verify_jwt = true

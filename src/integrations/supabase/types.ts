@@ -91,6 +91,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           description: string | null
+          energy_tag: Database["public"]["Enums"]["energy_level"] | null
           estimated_duration_hours: number | null
           id: string
           momentum_map_id: string
@@ -103,6 +104,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          energy_tag?: Database["public"]["Enums"]["energy_level"] | null
           estimated_duration_hours?: number | null
           id?: string
           momentum_map_id: string
@@ -115,6 +117,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           description?: string | null
+          energy_tag?: Database["public"]["Enums"]["energy_level"] | null
           estimated_duration_hours?: number | null
           id?: string
           momentum_map_id?: string
@@ -282,6 +285,7 @@ export type Database = {
       }
       momentum_maps: {
         Row: {
+          acceptance_criteria: string[] | null
           ai_generated: boolean
           completed_at: string | null
           created_at: string
@@ -289,11 +293,13 @@ export type Database = {
           goal: string
           id: string
           is_active: boolean
+          locked_chunks: string[] | null
           target_date: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          acceptance_criteria?: string[] | null
           ai_generated?: boolean
           completed_at?: string | null
           created_at?: string
@@ -301,11 +307,13 @@ export type Database = {
           goal: string
           id?: string
           is_active?: boolean
+          locked_chunks?: string[] | null
           target_date?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          acceptance_criteria?: string[] | null
           ai_generated?: boolean
           completed_at?: string | null
           created_at?: string
@@ -313,6 +321,7 @@ export type Database = {
           goal?: string
           id?: string
           is_active?: boolean
+          locked_chunks?: string[] | null
           target_date?: string | null
           updated_at?: string
           user_id?: string
@@ -411,6 +420,7 @@ export type Database = {
           id: string
           is_completed: boolean
           sort_order: number
+          time_estimate: string | null
           title: string
         }
         Insert: {
@@ -420,6 +430,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           sort_order?: number
+          time_estimate?: string | null
           title: string
         }
         Update: {
@@ -429,6 +440,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           sort_order?: number
+          time_estimate?: string | null
           title?: string
         }
         Relationships: [
@@ -519,6 +531,7 @@ export type Database = {
     }
     Enums: {
       chunk_status: "not_started" | "in_progress" | "stuck" | "completed"
+      energy_level: "low" | "medium" | "high"
       priority_level: "low" | "medium" | "high" | "urgent"
       reminder_trigger: "time" | "location" | "context" | "manual"
       thought_status: "active" | "archived"
@@ -650,6 +663,7 @@ export const Constants = {
   public: {
     Enums: {
       chunk_status: ["not_started", "in_progress", "stuck", "completed"],
+      energy_level: ["low", "medium", "high"],
       priority_level: ["low", "medium", "high", "urgent"],
       reminder_trigger: ["time", "location", "context", "manual"],
       thought_status: ["active", "archived"],
