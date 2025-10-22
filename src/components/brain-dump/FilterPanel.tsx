@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { X, Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getCategoryColor } from "@/lib/categoryColors";
+import { CategoryBadge } from "./CategoryBadge";
 import type { Database } from "@/integrations/supabase/types";
 
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -102,25 +102,21 @@ export function FilterPanel({
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => {
               const isSelected = selectedCategories.includes(category.id);
-              return (
+              return isSelected ? (
+                <CategoryBadge
+                  key={category.id}
+                  name={category.name}
+                  color={category.color}
+                  className="cursor-pointer hover:opacity-80"
+                  onClick={() => onCategoryToggle(category.id)}
+                />
+              ) : (
                 <Button
                   key={category.id}
-                  variant={isSelected ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
                   onClick={() => onCategoryToggle(category.id)}
-                  className={`text-ui-label ${
-                    isSelected
-                      ? "text-white"
-                      : "hover:bg-muted"
-                  }`}
-                  style={
-                    isSelected
-                      ? {
-                          backgroundColor: category.color || getCategoryColor(category.name),
-                          borderColor: category.color || getCategoryColor(category.name),
-                        }
-                      : undefined
-                  }
+                  className="text-ui-label hover:bg-muted"
                 >
                   {category.name}
                 </Button>

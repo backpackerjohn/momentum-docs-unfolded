@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { getCategoryColor } from "@/lib/categoryColors";
+import { CategoryBadge } from "./CategoryBadge";
 import type { Database } from "@/integrations/supabase/types";
 
 type Thought = Database['public']['Tables']['thoughts']['Row'];
@@ -243,13 +243,11 @@ export function ThoughtCard({
             {!isCategorizing && thought.thought_categories && thought.thought_categories.length > 0 ? (
               thought.thought_categories.map((tc, idx) => 
                 tc.categories ? (
-                  <span
+                  <CategoryBadge
                     key={idx}
-                    className="px-2 py-1 rounded-full text-ui-label text-white"
-                    style={{ backgroundColor: tc.categories.color || getCategoryColor(tc.categories.name) }}
-                  >
-                    {tc.categories.name}
-                  </span>
+                    name={tc.categories.name}
+                    color={tc.categories.color}
+                  />
                 ) : null
               )
             ) : !isCategorizing ? (

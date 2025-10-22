@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,17 +17,13 @@ import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useThoughtFilter } from "@/hooks/useThoughtFilter";
 import { useClusterData } from "@/hooks/useClusterData";
+import { useBrainDumpState } from "@/hooks/useBrainDumpState";
 
 export default function BrainDump() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
-  const [categorizingThoughts, setCategorizingThoughts] = useState<Set<string>>(new Set());
-  const [connections, setConnections] = useState<any[]>([]);
-  const [isLoadingConnections, setIsLoadingConnections] = useState(false);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedThoughts, setSelectedThoughts] = useState<Set<string>>(new Set());
-  const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
   const navigate = useNavigate();
+  
+  const { state, actions } = useBrainDumpState();
   
   const { thoughts: activeThoughts, isLoading: activeLoading, refetch: refetchActive } = useBrainDumpData('active');
   const { thoughts: archivedThoughts, isLoading: archivedLoading, refetch: refetchArchived } = useBrainDumpData('archived');
@@ -54,109 +50,17 @@ export default function BrainDump() {
     });
   }, [navigate]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Cmd/Ctrl+K - Open quick capture
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        setIsQuickCaptureOpen(true);
-      }
-      
-      // Cmd/Ctrl+A - Select all (in selection mode)
-      if ((event.metaKey || event.ctrlKey) && event.key === 'a' && isSelectionMode) {
-        event.preventDefault();
-        handleSelectAll();
-      }
-      
-      // Escape - Cancel selection mode or clear filters
-      if (event.key === 'Escape') {
-        if (isSelectionMode) {
-          setIsSelectionMode(false);
-          setSelectedThoughts(new Set());
-        } else if (hasActiveFilters) {
-          handleClearAll();
-        }
-      }
-      
-      // Delete - Archive selected (with confirmation)
-      if (event.key === 'Delete' && selectedThoughts.size > 0) {
-        event.preventDefault();
-        if (confirm(`Archive ${selectedThoughts.size} selected thoughts?`)) {
-          handleBulkArchive();
-        }
-      }
-    };
+  const handleSelectAll = useCallback(() => {
+    const allThoughtIds = filteredThoughts.map(t => t.id);
+    actions.selectAll(allThoughtIds);
+  }, [filteredThoughts, actions]);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSelectionMode, selectedThoughts, hasActiveFilters]);//eslint-disable-line
+  const handleBulkArchive = useCallback(async () => {
+    if (state.selectedThoughts.size === 0) return;
 
-  async function handleRunConnections() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    setIsLoadingConnections(true);
-    setConnections([]);
-
+    actions.setBulkActionLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('find-connections', {
-        body: { userId: user.id }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        setConnections(data.connections || []);
-        toast({
-          title: `Found ${data.connections?.length || 0} connections`,
-          description: data.connections?.length > 0 
-            ? "Discover relationships between your thoughts"
-            : "Try adding more thoughts to find connections"
-        });
-      } else {
-        throw new Error(data?.error || 'Failed to find connections');
-      }
-    } catch (error) {
-      console.error('Error finding connections:', error);
-      toast({
-        title: "Failed to find connections",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingConnections(false);
-    }
-  }
-
-  function handleToggleSelectionMode() {
-    setIsSelectionMode(!isSelectionMode);
-    setSelectedThoughts(new Set());
-  }
-
-  function handleToggleThoughtSelection(thoughtId: string) {
-    setSelectedThoughts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(thoughtId)) {
-        newSet.delete(thoughtId);
-      } else {
-        newSet.add(thoughtId);
-      }
-      return newSet;
-    });
-  }
-
-  function handleSelectAll() {
-    const allThoughtIds = new Set(filteredThoughts.map(t => t.id));
-    setSelectedThoughts(allThoughtIds);
-  }
-
-  async function handleBulkArchive() {
-    if (selectedThoughts.size === 0) return;
-
-    setIsPerformingBulkAction(true);
-    try {
-      const thoughtIds = Array.from(selectedThoughts);
+      const thoughtIds = Array.from(state.selectedThoughts);
       
       const { error } = await supabase
         .from('thoughts')
@@ -186,15 +90,86 @@ export default function BrainDump() {
         duration: 12000,
       });
       
-      setSelectedThoughts(new Set());
-      setIsSelectionMode(false);
+      actions.clearSelection();
     } catch (error) {
       console.error('Error archiving thoughts:', error);
       toast({ title: "Failed to archive thoughts", variant: "destructive" });
     } finally {
-      setIsPerformingBulkAction(false);
+      actions.setBulkActionLoading(false);
     }
-  }
+  }, [state.selectedThoughts, actions]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd/Ctrl+K - Open quick capture
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        actions.toggleQuickCapture(true);
+      }
+      
+      // Cmd/Ctrl+A - Select all (in selection mode)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'a' && state.isSelectionMode) {
+        event.preventDefault();
+        handleSelectAll();
+      }
+      
+      // Escape - Cancel selection mode or clear filters
+      if (event.key === 'Escape') {
+        if (state.isSelectionMode) {
+          actions.clearSelection();
+        } else if (hasActiveFilters) {
+          handleClearAll();
+        }
+      }
+      
+      // Delete - Archive selected (with confirmation)
+      if (event.key === 'Delete' && state.selectedThoughts.size > 0) {
+        event.preventDefault();
+        if (confirm(`Archive ${state.selectedThoughts.size} selected thoughts?`)) {
+          handleBulkArchive();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [state.isSelectionMode, state.selectedThoughts, hasActiveFilters, handleSelectAll, handleBulkArchive, handleClearAll, actions]);
+
+  const handleRunConnections = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    actions.setConnections([], true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('find-connections', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        actions.setConnections(data.connections || [], false);
+        toast({
+          title: `Found ${data.connections?.length || 0} connections`,
+          description: data.connections?.length > 0 
+            ? "Discover relationships between your thoughts"
+            : "Try adding more thoughts to find connections"
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to find connections');
+      }
+    } catch (error) {
+      console.error('Error finding connections:', error);
+      toast({
+        title: "Failed to find connections",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+      actions.setConnections([], false);
+    }
+  }, [actions]);
 
   if (!isAuthenticated) return null;
 
@@ -211,17 +186,7 @@ export default function BrainDump() {
         <CapturePanel 
           onRefetch={refetchActive}
           onCategorizingUpdate={(thoughtIds, isCategorizing) => {
-            setCategorizingThoughts(prev => {
-              const next = new Set(prev);
-              thoughtIds.forEach(id => {
-                if (isCategorizing) {
-                  next.add(id);
-                } else {
-                  next.delete(id);
-                }
-              });
-              return next;
-            });
+            actions.setCategorizingThoughts(thoughtIds, isCategorizing);
           }}
         />
 
@@ -254,19 +219,19 @@ export default function BrainDump() {
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-body font-medium">Bulk Actions</h4>
                       <Button
-                        variant={isSelectionMode ? "default" : "outline"}
+                        variant={state.isSelectionMode ? "default" : "outline"}
                         size="sm"
-                        onClick={handleToggleSelectionMode}
+                        onClick={actions.toggleSelectionMode}
                         disabled={filteredThoughts.length === 0}
                       >
-                        {isSelectionMode ? "Cancel" : "Select"}
+                        {state.isSelectionMode ? "Cancel" : "Select"}
                       </Button>
                     </div>
                     
-                    {isSelectionMode && (
+                    {state.isSelectionMode && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between text-caption text-muted-foreground">
-                          <span>{selectedThoughts.size} selected</span>
+                          <span>{state.selectedThoughts.size} selected</span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -277,16 +242,16 @@ export default function BrainDump() {
                           </Button>
                         </div>
                         
-                        {selectedThoughts.size > 0 && (
+                        {state.selectedThoughts.size > 0 && (
                           <div className="space-y-2">
                             <Button
                               variant="destructive"
                               size="sm"
                               onClick={handleBulkArchive}
-                              disabled={isPerformingBulkAction}
+                              disabled={state.isPerformingBulkAction}
                               className="w-full text-ui-label"
                             >
-                              {isPerformingBulkAction ? "Archiving..." : `Archive ${selectedThoughts.size} thoughts`}
+                              {state.isPerformingBulkAction ? "Archiving..." : `Archive ${state.selectedThoughts.size} thoughts`}
                             </Button>
                           </div>
                         )}
@@ -322,10 +287,10 @@ export default function BrainDump() {
                       <ThoughtCard 
                         key={thought.id} 
                         thought={thought}
-                        isCategorizing={categorizingThoughts.has(thought.id)}
-                        isSelectionMode={isSelectionMode}
-                        isSelected={selectedThoughts.has(thought.id)}
-                        onToggleSelection={handleToggleThoughtSelection}
+                        isCategorizing={state.categorizingThoughts.has(thought.id)}
+                        isSelectionMode={state.isSelectionMode}
+                        isSelected={state.selectedThoughts.has(thought.id)}
+                        onToggleSelection={actions.toggleThoughtSelection}
                       />
                     ))}
                   </div>
@@ -346,10 +311,10 @@ export default function BrainDump() {
                 </div>
                 <Button
                   onClick={handleRunConnections}
-                  disabled={isLoadingConnections || activeThoughts.length < 2}
+                  disabled={state.isLoadingConnections || activeThoughts.length < 2}
                   className="min-w-40"
                 >
-                  {isLoadingConnections ? (
+                  {state.isLoadingConnections ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                       Finding connections...
@@ -361,14 +326,14 @@ export default function BrainDump() {
               </div>
 
               {/* Connections Results */}
-              {isLoadingConnections ? (
+              {state.isLoadingConnections ? (
                 <div className="space-y-4">
                   <div className="text-center py-8 text-muted-foreground">
                     <div className="animate-pulse text-body mb-2">🔍 Finding connections in your thoughts...</div>
                     <p className="text-caption">This may take a few moments</p>
                   </div>
                 </div>
-              ) : connections.length === 0 ? (
+              ) : state.connections.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Brain className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <h3 className="text-h3 mb-2">No connections found yet</h3>
@@ -384,10 +349,10 @@ export default function BrainDump() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-body text-muted-foreground">
-                      Found {connections.length} connection{connections.length !== 1 ? 's' : ''}
+                      Found {state.connections.length} connection{state.connections.length !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  {connections.map((connection, index) => (
+                  {state.connections.map((connection, index) => (
                     <ConnectionCard key={index} connection={connection} />
                   ))}
                 </div>
@@ -454,10 +419,10 @@ export default function BrainDump() {
         </Tabs>
       </div>
 
-      <FloatingActionButton onClick={() => setIsQuickCaptureOpen(true)} />
+      <FloatingActionButton onClick={() => actions.toggleQuickCapture(true)} />
       <QuickCaptureModal 
-        open={isQuickCaptureOpen} 
-        onOpenChange={setIsQuickCaptureOpen} 
+        open={state.isQuickCaptureOpen}
+        onOpenChange={(open) => actions.toggleQuickCapture(open)}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { GoalInput } from "@/components/momentum-maps/GoalInput";
@@ -185,13 +185,19 @@ export default function MomentumMaps() {
     );
   }
 
-  const totalSteps = currentMap.chunks.reduce((acc, chunk) => acc + chunk.sub_steps.length, 0);
-  const completedSteps = currentMap.chunks.reduce(
-    (acc, chunk) => acc + chunk.sub_steps.filter(s => s.is_completed).length,
-    0
-  );
-  const overallProgress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
-  const isMapComplete = overallProgress === 100;
+  const progressMetrics = useMemo(() => {
+    const totalSteps = currentMap.chunks.reduce((acc, chunk) => acc + chunk.sub_steps.length, 0);
+    const completedSteps = currentMap.chunks.reduce(
+      (acc, chunk) => acc + chunk.sub_steps.filter(s => s.is_completed).length,
+      0
+    );
+    const overallProgress = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
+    const isMapComplete = overallProgress === 100;
+    
+    return { totalSteps, completedSteps, overallProgress, isMapComplete };
+  }, [currentMap.chunks]);
+
+  const { totalSteps, completedSteps, overallProgress, isMapComplete } = progressMetrics;
 
   return (
     <>
